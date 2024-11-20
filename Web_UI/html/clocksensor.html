@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clock Sensor_V1 Settings and Sensor Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #f47043;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #f47043;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #333;
+            border: 1px solid #555;
+            border-radius: 4px 4px 0 0;
+            color: #f47043;
+            transition: background-color 0.3s;
+        }
+        .tab:hover {
+            background-color: #444;
+        }
+        .tab.active {
+            background-color: #1e1e1e;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .section {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            width: 300px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .section h2 {
+            color: #f47043;
+        }
+        select, input[type="range"], #dropdown1 {
+            width: 100%;
+            margin-top: 10px;
+            padding: 5px;
+            background-color: #333;
+            color: #f47043;
+            border: none;
+            border-radius: 4px;
+        }
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+            border-radius: 8px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+            width: 100%;
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        .form-group input {
+            margin-top: 5px;
+            padding: 8px;
+            width: 100%;
+            background-color: #333;
+            color: #f47043;
+            border: 1px solid #555;
+            border-radius: 4px;
+        }
+        /* DST Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin-top: 10px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: #fff;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #f47043;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+            // ColorIndex
+        function getColorIndex() {
+            fetch('colorIndex.php')
+                .then(response => response.text())
+                .then(data => {
+                    const colorNames = ["Red", "Green", "Blue", "Magenta", "Yellow", "Light Blue", "White"];
+                    const colorIndex = parseInt(data.trim());
+                    document.getElementById('currentColor').textContent = `Current Color: ${colorNames[colorIndex]}`;
+                    document.getElementById('colorDropdown').value = colorIndex;
+                })
+                .catch(error => console.error('Error fetching color index:', error));
+        }
+        function updateColorIndex() {
+            const selectedColor = document.getElementById('colorDropdown').value;
+            fetch(`colorIndex.php?colorIndex=${selectedColor}`)
+                .then(() => getColorIndex())
+                .catch(error => console.error('Error updating color index:', error));
+        }
+
+        // Mode
+        function getMode() {
+            fetch('mode.php')
+                .then(response => response.text())
+                .then(data => {
+                    const modes = ["Clock", "Temperature", "Humidity"];
+                    const mode = parseInt(data.trim());
+                    document.getElementById('currentMode').textContent = `Current Mode: ${modes[mode]}`;
+                    document.getElementById('modeDropdown').value = mode;
+                })
+                .catch(error => console.error('Error fetching mode:', error));
+        }
+        function updateMode() {
+            const selectedMode = document.getElementById('modeDropdown').value;
+            fetch(`mode.php?mode=${selectedMode}`)
+                .then(() => getMode())
+                .catch(error => console.error('Error updating mode:', error));
+        }
+
+        // brioff (Brightness Offset)
+        function getBrightnessLevel() {
+            fetch('brioff.php')
+                .then(response => response.text())
+                .then(data => {
+                    const brightnessLevel = parseInt(data.trim()); // Expecting integer values 1 to 10
+                    document.getElementById('currentFloat').textContent = `Current Brightness Level: ${brightnessLevel}`;
+                    document.getElementById('floatSlider').value = brightnessLevel;  // Update the slider's value
+                })
+                .catch(error => console.error('Error fetching brightness level:', error));
+        }
+
+        function updateBrightnessLevel() {
+            const sliderValue = document.getElementById('floatSlider').value; // Get integer value 1 to 10
+            fetch(`brioff.php?brioff=${sliderValue}`)  // Pass the correct query parameter
+                .then(() => {
+                    document.getElementById('currentFloat').textContent = `Current Brightness Level: ${sliderValue}`; // Display updated value
+                })
+                .catch(error => console.error('Error updating brightness level:', error));
+        }
+
+        // DST Toggle
+        function getDSTStatus() {
+            fetch('DST.php')
+                .then(response => response.text())
+                .then(data => {
+                    const isDSTOn = data.trim() === '1';
+                    document.getElementById('dstToggle').checked = isDSTOn;
+                    document.getElementById('dstStatus').textContent = isDSTOn ? 'DST is ON' : 'DST is OFF';
+                })
+                .catch(error => console.error('Error fetching DST status:', error));
+        }
+        function updateDSTStatus() {
+            const newDST = document.getElementById('dstToggle').checked ? 1 : 0;
+            fetch(`DST.php?DST=${newDST}`)
+                .then(() => getDSTStatus())
+                .catch(error => console.error('Error updating DST status:', error));
+        }
+
+        window.onload = () => {
+            getColorIndex();
+            getMode();
+            getBrightnessLevel();
+            getDSTStatus();
+            setInterval(getColorIndex, 300);
+            setInterval(getMode, 300);
+            setInterval(getBrightnessLevel, 300);
+            setInterval(getDSTStatus, 1000);
+        }
+
+        $(document).ready(function () {
+                  getDSTStatus(); 
+                  let chartInstance = null;
+
+                  // Fetch data based on selection
+                  function fetchData() {
+                      const dropdown1 = $('#dropdown1').val();
+                      const date = $('#date').val();
+                      const month = $('#month').val();
+                      const year = $('#year').val();
+
+                      // Validate inputs
+                      if (dropdown1 === 'Daily' && !date) {
+                          alert('Please select a date.');
+                          return;
+                      }
+                      if (dropdown1 === 'Monthly' && !month) {
+                          alert('Please select a month.');
+                          return;
+                      }
+                      if (dropdown1 === 'Yearly' && !year) {
+                          alert('Please select a year.');
+                          return;
+                      }
+
+                      // Construct the URL
+                      let url = `fetch_data.php?dropdown1=${dropdown1}`;
+                      if (dropdown1 === 'Daily') url += `&date=${date}`;
+                      if (dropdown1 === 'Monthly') url += `&month=${month}`;
+                      if (dropdown1 === 'Yearly') url += `&year=${year}`;
+
+                      // Fetch the data
+                      $.get(url, function (response) {
+                          try {
+                              const dataArr = JSON.parse(response);
+
+                              // Check if the response contains a "message" 
+                              if (dataArr.message) {
+                                  alert(dataArr.message);
+                                  clearGraph();
+                                  return;
+                              }
+
+                              // Update the graph
+                              updateGraph(dataArr, dropdown1);
+                          } catch (error) {
+                              alert('Error processing the server response.');
+                              console.error(error);
+                          }
+                      });
+                  }
+
+                  // Clear the graph
+                  function clearGraph() {
+                      if (chartInstance) {
+                          chartInstance.destroy();
+                          chartInstance = null;
+                      }
+                  }
+
+                  // Update graph based on fetched data
+                  function updateGraph(dataArr, dropdown1) {
+                      const labels = [];
+                      const tempData = [];
+                      const humData = [];
+                      const monthNames = [
+                          "January", "February", "March", "April", "May", "June",
+                          "July", "August", "September", "October", "November", "December"
+                      ];
+
+                      // Prepare data for the graph
+                      if (dropdown1 === 'Live' || dropdown1 === 'Daily') {
+                          dataArr.forEach((item) => {
+                              labels.push(`${item.hour}:00`);
+                              tempData.push(parseFloat(item.temperature));
+                              humData.push(parseFloat(item.humidity));
+                          });
+                      } else if (dropdown1 === 'Monthly') {
+                          dataArr.forEach((item) => {
+                              labels.push(`Day ${item.day}`);
+                              tempData.push(parseFloat(item.temperature));
+                              humData.push(parseFloat(item.humidity));
+                          });
+                      } else if (dropdown1 === 'Yearly') {
+                          dataArr.forEach((item) => {
+                              const monthIndex = parseInt(item.month, 10) - 1; 
+                              labels.push(monthNames[monthIndex]); 
+                              tempData.push(parseFloat(item.temperature));
+                              humData.push(parseFloat(item.humidity));
+                          });
+                      }
+
+                      // Clear the previous graph if it exists
+                      clearGraph();
+
+                      // Render the new chart
+                      const ctx = document.getElementById('tempHumChart').getContext('2d');
+                      chartInstance = new Chart(ctx, {
+                          type: 'line',
+                          data: {
+                              labels,
+                              datasets: [
+                                  {
+                                      label: 'Temperature (°C)',
+                                      data: tempData,
+                                      borderColor: 'rgba(255, 99, 132, 1)',
+                                      backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                      borderWidth: 2,
+                                      fill: true,
+                                      tension: 0.4,
+                                  },
+                                  {
+                                      label: 'Humidity (%)',
+                                      data: humData,
+                                      borderColor: 'rgba(54, 162, 235, 1)',
+                                      backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                      borderWidth: 2,
+                                      fill: true,
+                                      tension: 0.4,
+                                  },
+                              ],
+                          },
+                          options: {
+                              responsive: true,
+                              maintainAspectRatio: false,
+                              scales: {
+                                  x: {
+                                      title: {
+                                          display: true,
+                                          text:
+                                              dropdown1 === 'Live' || dropdown1 === 'Daily'
+                                                  ? 'Hour'
+                                                  : dropdown1 === 'Monthly'
+                                                  ? 'Day'
+                                                  : 'Month',
+                                          color: '#ffa500',
+                                      },
+                                      ticks: {
+                                          color: '#e0e0e0',
+                                      },
+                                  },
+                                  y: {
+                                      beginAtZero: true,
+                                      title: {
+                                          display: true,
+                                          text: 'Temperature (°C) / Humidity (%)',
+                                          color: '#ffa500',
+                                      },
+                                      ticks: {
+                                          color: '#e0e0e0',
+                                      },
+                                  },
+                              },
+                              plugins: {
+                                  legend: {
+                                      labels: {
+                                          color: '#ffa500',
+                                      },
+                                  },
+                                  tooltip: {
+                                      callbacks: {
+                                          label: (context) =>
+                                              `${context.dataset.label}: ${context.raw}`,
+                                      },
+                                  },
+                              },
+                          },
+                      });
+                  }
+
+                  // Change behavior based on dropdown selection
+                  $('#dropdown1').change(function () {
+                      const dropdown1 = $(this).val();
+                      $('#datePicker').toggle(dropdown1 === 'Daily');
+                      $('#monthPicker').toggle(dropdown1 === 'Monthly');
+                      $('#yearPicker').toggle(dropdown1 === 'Yearly');
+                      fetchData();
+                  });
+
+                  // Add listeners for pickers
+                  $('#date').change(fetchData);
+                  $('#month').change(fetchData);
+                  $('#year').change(fetchData);
+                 
+                  fetchData();
+              });
+
+    </script>
+</head>
+<body>
+    <h1>Clock Sensor_V1 Settings and Sensor Data</h1>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab(0)">Settings</div>
+        <div class="tab" onclick="switchTab(1)">Sensor Data</div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-content active" id="settingsTab">
+        <div class="container">
+            <div class="section">
+                <h2>Color Settings</h2>
+                <p id="currentColor">Loading...</p>
+                <select id="colorDropdown" onchange="updateColorIndex()">
+                    <option value="0">Red</option>
+                    <option value="1">Green</option>
+                    <option value="2">Blue</option>
+                    <option value="3">Magenta</option>
+                    <option value="4">Yellow</option>
+                    <option value="5">Light Blue</option>
+                    <option value="6">White</option>
+                </select>
+                
+            </div>
+
+            <div class="section">
+                <h2>Mode Settings</h2>
+                <p id="currentMode">Loading...</p>
+                <select id="modeDropdown" onchange="updateMode()">
+                    <option value="0">Clock</option>
+                    <option value="1">Temperature</option>
+                    <option value="2">Humidity</option>
+                </select>
+                
+            </div>
+
+            <div class="section">
+                <h2>Brightness Control</h2>
+                <p id="currentFloat">Loading...</p>
+                <input type="range" id="floatSlider" min="1" max="10" step="1" onchange="updateBrightnessLevel()" />
+                
+            </div>
+
+            <div class="section">
+                <h2>Daylight Saving Time (DST)</h2>
+                <label for="dstToggle">Enable DST:</label>
+                <label class="switch">
+                    <input type="checkbox" id="dstToggle" onchange="updateDSTStatus()">
+                    <span class="slider"></span>
+                </label>
+                <p id="dstStatus">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sensor Data Tab -->
+    <div class="tab-content" id="sensorDataTab">
+        <div class="container">
+            <div class="section" style="width: 100%; max-width: 100%;">
+                <label for="dropdown1">Select View:</label>
+                <select id="dropdown1">
+                    <option value="Live">Live</option>
+                    <option value="Daily">Daily</option>
+                    <option value="Monthly">Monthly</option>
+                    <option value="Yearly">Yearly</option>
+                </select>
+
+                <div id="datePicker" class="form-group" style="display: none;">
+                    <label for="date">Select Date:</label>
+                    <input type="date" id="date" />
+                </div>
+
+                <div id="monthPicker" class="form-group" style="display: none;">
+                    <label for="month">Select Month:</label>
+                    <input type="month" id="month" />
+                </div>
+
+                <div id="yearPicker" class="form-group" style="display: none;">
+                    <label for="year">Select Year:</label>
+                    <input type="number" id="year" min="2000" max="2099" value="2023" />
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="tempHumChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabIndex) {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach((tab, index) => {
+                tab.classList.remove('active');
+                tabContents[index].classList.remove('active');
+            });
+
+            tabs[tabIndex].classList.add('active');
+            tabContents[tabIndex].classList.add('active');
+        }
+    </script>
+</body>
+</html>
