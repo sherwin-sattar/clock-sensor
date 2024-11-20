@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mode Interface</title>
+    <script>
+        function getmode() {
+            fetch('mode.php')
+                .then(response => response.text())
+                .then(data => {
+                    console.log("Received mode:", data);
+                    const modeNames = ["Clock", "Temprature", "Humidity"];
+                    const mode = parseInt(data.trim());
+
+                    if (!isNaN(mode) && mode >= 0 && mode <= 2) {
+                        document.getElementById('currentmode').innerText = 'Current Mode: ' + modeNames[mode];
+                        document.getElementById('modeDropdown').value = mode;
+                    } else {
+                        document.getElementById('currentmode').innerText = 'Invalid mode received';
+                    }
+                })
+                .catch(error => console.error('Error fetching mode:', error));
+        }
+
+        function updatemode() {
+            const selectedmode = document.getElementById('modeDropdown').value;
+            fetch(`mode.php?mode=${selectedmode}`)
+                .then(response => response.text())
+                .then(data => {
+                    console.log("Update response:", data);
+                    getmodex();
+                })
+                .catch(error => console.error('Error updating Mode:', error));
+        }
+
+        // Load current mode when the page loads and refresh every 5 miliseconds
+        window.onload = () => {
+            getmode();
+            setInterval(getmode, 5); // Refresh every 5 miliseconds
+        };
+    </script>
+</head>
+<body>
+    <h1>mode Controller</h1>
+    <p id="currentmode">Loading current mode...</p>
+    <label for="modeDropdown">Select a mode:</label>
+    <select id="modeDropdown" onchange="updatemode()">
+        <option value="0">Clock</option>
+        <option value="1">Temprature</option>
+        <option value="2">Humidity</option>
+
+    </select>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DST Toggle</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            border-radius: 50%;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+        }
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Toggle DST (Daylight Saving Time)</h1>
+    <label class="switch">
+        <input type="checkbox" id="dstToggle">
+        <span class="slider"></span>
+    </label>
+    <br>
+    <p>Status: <span id="dstStatus">Loading...</span></p>
+
+    <script>
+        // Fetch the current DST status from the server
+        function fetchDSTStatus() {
+            fetch('DST.php') 
+                .then(response => response.text())
+                .then(data => {
+                    const dstStatus = document.getElementById('dstStatus');
+                    const dstToggle = document.getElementById('dstToggle');
+                    if (data == '1') {
+                        dstToggle.checked = true;
+                        dstStatus.textContent = 'DST is ON';
+                    } else {
+                        dstToggle.checked = false;
+                        dstStatus.textContent = 'DST is OFF';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching DST status:', error);
+                    document.getElementById('dstStatus').textContent = 'Error loading DST status';
+                });
+        }
+
+        // Update the DST status in the database when the switch is toggled
+        document.getElementById('dstToggle').addEventListener('change', function() {
+            const newDST = this.checked ? 1 : 0;
+            fetch(`DST.php?DST=${newDST}`)
+                .then(response => response.text())
+                .then(data => {
+                    console.log('DST updated:', data);
+                    fetchDSTStatus();  // Refresh the status display
+                })
+                .catch(error => {
+                    console.error('Error updating DST:', error);
+                });
+        });
+
+        // Load current DST status when the page loads and refresh every second
+        window.onload = () => {
+            fetchDSTStatus(); 
+            setInterval(fetchDSTStatus, 1000);  // Refresh every second
+        };
+    </script>
+</body>
+</html>

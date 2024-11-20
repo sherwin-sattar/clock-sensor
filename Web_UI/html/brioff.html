@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Float Value Control</title>
+    <script>
+        // Function to fetch the current brightness offset from the server
+        function getbrioff() {
+            fetch('brioff.php')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('currentValue').innerText = data;
+                    document.getElementById('floatSlider').value = data;
+                    document.getElementById('sliderValue').innerText = data;
+                });
+        }
+
+        // Function to update the brightness value in the server via slider
+        function updatebrioff() {
+            let sliderValue = document.getElementById('floatSlider').value;
+            fetch('brioff.php?brioff=' + sliderValue)  
+                .then(response => response.text())
+                .then(data => {
+                    console.log(data); 
+                    getbrioff(); 
+                });
+        }
+
+        // Fetch the current brightness value on page load
+        window.onload = getbrioff;
+    </script>
+</head>
+<body>
+    <h1>ESP32 Float Value Control</h1>
+
+    <p>Current Float Value: <span id="currentValue">Loading...</span></p>
+
+    <label for="floatSlider">Set Float Value: </label>
+    <input type="range" id="floatSlider" min="0.75" max="10" step="0.01" value="1.0" oninput="updatebrioff()">
+    <br>
+    <p>Value: <span id="sliderValue">1.00</span></p>
+
+    <script>
+        // Update the slider value text as the user changes the slider
+        document.getElementById('floatSlider').addEventListener('input', function() {
+            document.getElementById('sliderValue').innerText = this.value;
+        });
+    </script>
+</body>
+</html>

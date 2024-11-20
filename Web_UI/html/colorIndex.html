@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Index Interface</title>
+    <script>
+        function getColorIndex() {
+            fetch('colorIndex.php')
+                .then(response => response.text())
+                .then(data => {
+                    console.log("Received color index:", data);
+                    const colorNames = ["Red", "Green", "Blue", "Megantic", "Yellow", "Light Blue", "White"];
+                    const colorIndex = parseInt(data.trim());
+
+                    if (!isNaN(colorIndex) && colorIndex >= 0 && colorIndex <= 6) {
+                        document.getElementById('currentColorIndex').innerText = 'Current Color: ' + colorNames[colorIndex];
+                        document.getElementById('colorDropdown').value = colorIndex;
+                    } else {
+                        document.getElementById('currentColorIndex').innerText = 'Invalid color index received';
+                    }
+                })
+                .catch(error => console.error('Error fetching color index:', error));
+        }
+
+        function updateColorIndex() {
+            const selectedColor = document.getElementById('colorDropdown').value;
+            fetch(`colorIndex.php?colorIndex=${selectedColor}`)
+                .then(response => response.text())
+                .then(data => {
+                    console.log("Update response:", data);
+                    getColorIndex(); 
+                })
+                .catch(error => console.error('Error updating color index:', error));
+        }
+
+        // Load current colorIndex when the page loads and refresh every 50 miliseconds
+        window.onload = () => {
+            getColorIndex(); // Initial load
+            setInterval(getColorIndex, 50); // Refresh every 50 miliseconds
+        };
+    </script>
+</head>
+<body>
+    <h1>Color Index Controller</h1>
+    <p id="currentColorIndex">Loading current color...</p>
+    <label for="colorDropdown">Select a Color:</label>
+    <select id="colorDropdown" onchange="updateColorIndex()">
+        <option value="0">Red</option>
+        <option value="1">Green</option>
+        <option value="2">Blue</option>
+        <option value="3">Megantic</option>
+        <option value="4">Yellow</option>
+        <option value="5">Light Blue</option>
+        <option value="6">White</option>
+    </select>
+</body>
+</html>
