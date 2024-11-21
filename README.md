@@ -1,4 +1,4 @@
-User Interface
+# User Interface
 
 Web user interface allows seamless control and customization of a clock display, featuring 86 addressable LEDs. Users can adjust and control the clock’s display from anywhere in the world through a secure online connection.
 In addition to clock control, the UI also provides real-time monitoring of environmental conditions, including live temperature and humidity readings. Historical data is visualized through easy-to-read graphs, allowing users to track past temperature and humidity trends.
